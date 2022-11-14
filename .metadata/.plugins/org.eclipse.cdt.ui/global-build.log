@@ -1,0 +1,93 @@
+Info: Nothing to build for Project1
+Info: Nothing to build for Project1
+Info: Nothing to build for Project1
+17:21:48 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Terminal\\terminal.o" "..\\Terminal\\terminal.c" 
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Server\\server.o" "..\\Server\\server.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:23:00 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:24:09 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/../../../../x86_64-w64-mingw32/bin/ld.exe: cannot open output file Project1.exe: Permission denied
+collect2.exe: error: ld returned 1 exit status
+17:24:16 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:24:55 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:31:05 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:32:18 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:48:21 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Server\\server.o" "..\\Server\\server.c" 
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:50:12 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:52:11 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Server\\server.o" "..\\Server\\server.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:53:09 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Server\\server.o" "..\\Server\\server.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1
+17:54:37 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+17:55:04 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+17:56:16 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+17:58:07 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+18:03:47 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Server\\server.o" "..\\Server\\server.c" 
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+18:10:04 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Server\\server.o" "..\\Server\\server.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+18:12:52 **** Incremental Build of configuration Debug for project Project1 ****
+Info: Internal Builder is used for build
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Main Function\\main.o" "..\\Main Function\\main.c" 
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -o "Server\\server.o" "..\\Server\\server.c" 
+gcc -o Project1.exe "Application\\app.o" "Card\\card.o" "Main Function\\main.o" "Server\\server.o" "Terminal\\terminal.o" 
+Info: Nothing to build for Project1

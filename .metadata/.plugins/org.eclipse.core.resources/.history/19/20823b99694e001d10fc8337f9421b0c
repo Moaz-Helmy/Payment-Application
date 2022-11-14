@@ -1,0 +1,16 @@
+/*
+ * main.c
+ *
+ *  Created on: Oct 17, 2022
+ *      Author: ZIZO
+ */
+#include<stdio.h>
+#include <stdlib.h>
+
+int main(void)
+{
+	char c[8]="14/202 ";
+	int x=atoi("2022s");
+	printf("%d",x);
+}
+

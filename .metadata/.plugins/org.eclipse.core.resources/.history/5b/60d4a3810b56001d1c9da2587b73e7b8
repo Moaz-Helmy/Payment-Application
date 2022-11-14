@@ -1,0 +1,123 @@
+/******************************************************************************
+ *
+ * Module: Main File
+ *
+ * File Name: main.c
+ *
+ * Description: Source file for main function.
+ *
+ * Author: Moaz Mohamed
+ *
+ *******************************************************************************/
+
+/*******************************************************************************
+ *                                Includes                                     *
+ *******************************************************************************/
+#include "../Application/app.h"
+#include <stdio.h>
+#include <unistd.h>
+
+#include "../Card/card.h"
+#include "../Terminal/terminal.h"
+#include "../Server/server.h"
+
+/*******************************************************************************
+ *                                Test Functions & variables                   *
+ *******************************************************************************/
+void terminalTest(void);
+void cardTest(void);
+void isCardExpiredTest(void);
+void isBelowMaxAmountTest(void);
+void saveTransactionTest(void);
+ST_cardData_t card;
+ST_terminalData_t terminal;
+
+/*******************************************************************************
+ *                                Main Function                                *
+ *******************************************************************************/
+int main(void)
+{
+	setvbuf(stdout,NULL,_IONBF,0);
+	setvbuf(stderr,NULL,_IONBF,0);
+
+	isCardExpiredTest();
+	isCardExpiredTest();
+	/********************************Star Application*******************************/
+	//appStart();
+
+	/*Sleep For some Time to be able to see the last output on the terminal*/
+	sleep(5);
+
+	return 0;
+}
+
+void cardTest(void)
+{
+	int32_t bool=1,test=1;
+	while (bool)
+	{
+		printf("Test case %d\n",test);
+		puts("#########################");
+		puts("Card Test");
+		if(getCardHolderName(&card)==CARD_OK)
+		{
+			puts("Valid Name");
+			printf("Input name : %s\n",card.cardHolderName);
+			printf("Output name : %s\n",card.cardHolderName);
+		}
+
+		if(getCardExpiryDate(&card)==CARD_OK)
+		{
+			puts("Valid Date");
+			printf("Input date : %s\n",card.cardExpirationDate);
+			printf("Output date : %s\n",card.cardExpirationDate);
+		}
+		if(getCardPAN(&card)==CARD_OK)
+		{
+			puts("Valid PAN");
+			printf("Input PAN : %s\n",card.primaryAccountNumber);
+			printf("Output PAN : %s\n",card.primaryAccountNumber);
+		}
+		puts("#########################");
+		scanf(" %d",&bool);
+		test++;
+	}
+}
+
+void terminalTest(void)
+{
+	int32_t bool=1,test=1;
+	while (bool)
+	{
+		printf("Test case %d\n",test);
+		puts("#########################");
+		puts("Terminal Test");
+		getTransactionDate(&terminal);
+		printf("Output: %s\n",terminal.transactionDate);
+		(isCardExpired(&card, &terminal)==TERMINAL_OK?printf("Valid Date: %s\n",terminal.transactionDate):printf("Card Expired: %s\n",terminal.transactionDate));
+		(isValidCardPAN(&card)==TERMINAL_OK)?printf("Valid PAN: %s\n",card.primaryAccountNumber):printf("Invalid PAN: %s\n",card.primaryAccountNumber);
+		(getTransactionAmount(&terminal)==TERMINAL_OK?printf("Valid Amount: %f\n",terminal.transAmount):printf("Invalid Amount, Amount is negative or 0\n"));
+		printf("Transaction Amount: %f\n",terminal.transAmount);
+		setMaxAmount(&terminal, 70000);
+		printf("Terminal Max Amount: %f\n",terminal.maxTransAmount);
+		puts("#########################");
+		scanf(" %d",&bool);
+		test++;
+	}
+}
+
+void isCardExpiredTest(void)
+{
+	static int test=1;
+	puts("isCardExpired Test");
+	printf("Test Case : %d\n",test);
+	getCardExpiryDate(&card);
+	getTransactionDate(&terminal);
+	printf("Card Expiration Date: %s\n",card.cardExpirationDate);
+	printf("Automatic Transaction Date: %s\n",terminal.transactionDate);
+	if(isCardExpired(&card, &terminal)==TERMINAL_OK)
+	{
+		printf("Card is not Expired\n");
+	}
+	test++;
+}

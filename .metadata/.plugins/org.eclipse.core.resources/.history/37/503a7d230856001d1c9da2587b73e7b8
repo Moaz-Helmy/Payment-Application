@@ -1,0 +1,274 @@
+/******************************************************************************
+ *
+ * Module: Terminal Module
+ *
+ * File Name: terminal.c
+ *
+ * Description: Source file for terminal module
+ *
+ * Author: Moaz Mohamed
+ *
+ *******************************************************************************/
+
+/*******************************************************************************
+ *                                Includes                                     *
+ *******************************************************************************/
+#include "terminal.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+
+/*******************************************************************************
+ *                      Functions Definitions                                  *
+ *******************************************************************************/
+/*
+ * Description :
+ * 1- This function will ask for the transaction data and store it in terminal data.
+ * 2- Transaction date is 10 characters string in the format DD/MM/YYYY, e.g 25/06/2022.
+ * 3- If the transaction date is NULL, less than 10 characters or wrong format will return
+ *    WRONG_DATE error, else return TERMINAL_OK.
+ */
+EN_terminalError_t getTransactionDate(ST_terminalData_t *termData)
+{
+	/*Variable used as counter in two loops*/
+	uint8_t index=0;
+
+	/*String to store the days*/
+	uint8_t days[3];
+
+	/*String to store the Months*/
+	uint8_t months[3];
+
+	/*String to store the years*/
+	uint8_t years[5];
+
+	/*Buffer to store the converted numbers from integers to characters*/
+	uint8_t temp[2];
+
+	/*Get the current time from desktop*/
+	time_t local_time_now=time(NULL);
+
+	/*Get the structure that contains integers representing days months, and year of the current date*/
+	struct tm *Current_Time= localtime(&local_time_now);
+
+	/*Convert the years to ascii*/
+	itoa(Current_Time->tm_year+1900,(char*)years,10);
+
+	/*Convert Months and days to ascii*/
+	for(index=0; index<2;index++)
+	{
+		itoa((index==0)?Current_Time->tm_mday/10:Current_Time->tm_mday%10,(char*)temp,10);
+		days[index]=temp[0];
+		itoa((index==0)?(Current_Time->tm_mon+1)/10:(Current_Time->tm_mon+1)%10,(char*)temp,10);
+		months[index]=temp[0];
+	}
+
+	/*Store the converted days, months and year in the transaction date with the correct format (DD/MM/YYYY)*/
+	for(index=0;index<10;index++)
+	{
+		switch(index)
+		{
+		case 0:
+			termData->transactionDate[index]=days[0];
+			break;
+		case 1:
+			termData->transactionDate[index]=days[1];
+			break;
+		case 2:
+			termData->transactionDate[index]='/';
+			break;
+		case 3:
+			termData->transactionDate[index]=months[0];
+			break;
+		case 4:
+			termData->transactionDate[index]=months[1];
+			break;
+		case 5:
+			termData->transactionDate[index]='/';
+			break;
+		case 6:
+			termData->transactionDate[index]=years[0];
+			break;
+		case 7:
+			termData->transactionDate[index]=years[1];
+			break;
+		case 8:
+			termData->transactionDate[index]=years[2];
+			break;
+		case 9:
+			termData->transactionDate[index]=years[3];
+			break;
+		}
+	}
+
+	/*Add the null terminator at the end of the string*/
+	termData->transactionDate[index]='\0';
+
+	/*Output the transaction date to the terminal*/
+	printf("Transaction Date: ");
+	puts((const char*)termData->transactionDate);
+
+	/*Return successfully*/
+	return TERMINAL_OK;
+}
+
+/*
+ * Description :
+ * 1- This function compares the card expiry date with the transaction date.
+ * 2- If the card expiration date is before the transaction date will return EXPIRED_CARD,
+ *    else return TERMINAL_OK.
+ */
+EN_terminalError_t isCardExpired(ST_cardData_t *cardData, ST_terminalData_t *termData)
+{
+	/*Convert the card year to integer to make operations on it*/
+	uint8_t cardYear=atoi((const char*)cardData->cardExpirationDate+3);
+
+	/*Convert the transaction year (only the least two significant numbers in the year), to integers to make operations on them*/
+	uint8_t transYear=atoi((const char*)termData->transactionDate+8);
+
+	/*Convert the card month to integer to make operations on it*/
+	uint8_t cardMonth=atoi((const char*)cardData->cardExpirationDate);
+
+	/*Convert the transaction month to integer to make operations on it*/
+	uint8_t transMonth=atoi((const char*)termData->transactionDate+3);
+
+	if(cardYear>transYear)
+	{
+		/*If the card expiration year is larger than the date of transaction, return successfully*/
+		return TERMINAL_OK;
+	}
+	else if(cardYear==transYear && cardMonth>transMonth)
+	{
+		/*If years are equal, but the card expiration month is larger, return successfully as well*/
+		return TERMINAL_OK;
+	}
+	else
+	{
+		/*If transaction date is larger than the expiration date, return Expired Card*/
+		return EXPIRED_CARD;
+	}
+}
+
+/*
+ * Description :
+ * 1- This function checks if the PAN is a Luhn number or not.
+ * 2- If PAN is not a Luhn number will return INVALID_CARD, else return TERMINAL_OK.
+ */
+EN_terminalError_t isValidCardPAN(ST_cardData_t *cardData)
+{
+	/*Get the length of the PAN*/
+	uint16_t numberOfDigits= strlen((const char*)cardData->primaryAccountNumber);
+
+	/*Variable to store the sum of the digits during a stage in the checking process*/
+	uint32_t sum=0;
+
+	/*Variable that only stores : 1-> true, or 0-> false*/
+	uint8_t evenPosition=0;
+
+	/*Variable to index the PAN string*/
+	int16_t strIndex=0;
+
+	/*Temporary variably used to store results of some calculations needed in the process*/
+	uint16_t temp=0;
+
+	/*loop on every number in the PAN*/
+	for(strIndex=numberOfDigits-1; strIndex>=0 ; strIndex--)
+	{
+		/*Convert characters to numbers*/
+		temp= cardData->primaryAccountNumber[strIndex] - '0';
+
+		/*If number position is even, multiply the number by 2*/
+		if(evenPosition)
+		{
+			temp*=2;
+		}
+
+		/*Store the sum of all discrete numbers*/
+		sum+=temp/10;
+		sum+=temp%10;
+
+		evenPosition=!evenPosition;
+	}
+
+	/*If the sum modulo 10 equals 0, then the PAN is Luhn*/
+	if(sum % 10 == 0)
+	{
+		return TERMINAL_OK;
+	}
+	else
+	{
+		/*Else, the PAN is invalid*/
+		return INVALID_CARD;
+	}
+}
+
+/*
+ * Description :
+ * 1- This function asks for the transaction amount and saves it into terminal data.
+ * 2- If the transaction amount is less than or equal to 0 will return INVALID_AMOUNT,
+ *    else return TERMINAL_OK.
+ */
+EN_terminalError_t getTransactionAmount(ST_terminalData_t *termData)
+{
+	/*Prompt for user to enter the desired amount to be withdrawn*/
+	puts("Please Enter Transaction Amount...");
+
+	/*Store the Amount in the terminal data structure*/
+	scanf(" %f",&termData->transAmount);
+
+	/*Check if the amount is zero or negative value*/
+	if((int32_t)termData->transAmount<= 0)
+	{
+		/*If it's zero or -ve, return Invalid*/
+		return INVALID_AMOUNT;
+	}
+	else
+	{
+		/*Return successfully, if the amount is greater than zero*/
+		return TERMINAL_OK;
+	}
+}
+
+/*
+ * Description :
+ * 1- This function compares the transaction amount with the terminal max amount.
+ * 2- If the transaction amount is larger than the terminal max amount will return
+ *    EXCEED_MAX_AMOUNT, else return TERMINAL_OK.
+ */
+EN_terminalError_t isBelowMaxAmount(ST_terminalData_t *termData)
+{
+	if((int32_t)termData->transAmount > (int32_t)termData->maxTransAmount)
+	{
+		/*If the amount is smaller than the terminal max amount*/
+		return EXCEED_MAX_AMOUNT;
+	}
+	else
+	{
+		/*return successfully*/
+		return TERMINAL_OK;
+	}
+}
+
+/*
+ * Description :
+ * 1- This function takes the maximum allowed amount and stores it into terminal data.
+ * 2- Transaction max amount is a float number.
+ * 3- If transaction max amount less than or equal to 0 will return the INVALID_MAX_AMOUNT
+ *    error, else return TERMINAL_OK.
+ */
+EN_terminalError_t setMaxAmount(ST_terminalData_t *termData, float maxAmount)
+{
+	if((int32_t)maxAmount <= 0)
+	{
+		puts("Invalid Terminal Max AMount");
+		/*if the terminal max amount is 0 or -ve, prompt an error*/
+		return INVALID_MAX_AMOUNT;
+	}
+	else
+	{
+		/*Else, store the max terminal amount in the terminal data structure*/
+		termData->maxTransAmount=maxAmount;
+		return TERMINAL_OK;
+	}
+}

@@ -1,0 +1,407 @@
+/******************************************************************************
+ *
+ * Module: Server Module
+ *
+ * File Name: server.c
+ *
+ * Description: Source file for Server Module
+ *
+ * Author: Moaz Mohamed
+ *
+ *******************************************************************************/
+
+/*******************************************************************************
+ *                                Includes                                     *
+ *******************************************************************************/
+#include "server.h"
+#include <stdio.h>
+#include <string.h>
+
+/*******************************************************************************
+ *                           Global Variables                                  *
+ *******************************************************************************/
+/*
+ * Create a global array of ST_accountsDB_t for the valid accounts database.
+ */
+static ST_accountsDB_t accountsDB[255]={
+		{2000.0, RUNNING,"8989374615436851"},
+		{100000.0, BLOCKED,"5807007076043875"},
+		{5000.0,RUNNING,"528880969446867062"},
+		{3000.0,BLOCKED,"528880969446867068"},
+		{2500.0,RUNNING,"875330550502153257"}
+};
+
+/*
+ * Create a global array of ST_transaction_t.
+ */
+static ST_transaction_t transactionsDB[255]={0};
+
+/*******************************************************************************
+ *                     Static Functions Prototypes                             *
+ *******************************************************************************/
+/*
+ * Description :
+ * 1- This function is used privately by the recieveTransactionData() function
+ *    to update the accounts database.
+ */
+static void updateAccountsDB(ST_accountsDB_t * accountReference, float withdrawnAmount);
+
+/*
+ * Description :
+ * 1- This function displays the content of the updated data base account profile.
+ * 2- It takes pointer to constant data, because it's n't meant for it to change any data.
+ */
+static void displayUpdatedAccountData(const ST_accountsDB_t * accountReference);
+
+/*******************************************************************************
+ *                      Static Functions Definitions                           *
+ *******************************************************************************/
+/*
+ * Description :
+ * 1- This function is used privately by the recieveTransactionData() function
+ *    to update the accounts database.
+ */
+static void updateAccountsDB(ST_accountsDB_t * accountReference, float withdrawnAmount)
+{
+	/*local variable to index accounts DB*/
+	uint8_t accountDBSearchIndex=0;
+
+	/*Search for the required account in the accounts DB*/
+	for(accountDBSearchIndex=0; accountDBSearchIndex<255;accountDBSearchIndex++)
+	{
+		/*Check if the account is found through comparing PAN numbers of the required and stored accounts*/
+		if(strcmp((const char*)accountReference->primaryAccountNumber,(const char*)accountsDB[accountDBSearchIndex].primaryAccountNumber)==0)
+		{
+			/*If the account is found, subtract the withdrawn amount from the account balance*/
+			accountsDB[accountDBSearchIndex].balance-=withdrawnAmount;
+
+			/*Display account data after the update*/
+			displayUpdatedAccountData(&accountsDB[accountDBSearchIndex]);
+
+			/*Break out of the loop after updating the desired account data*/
+			break;
+		}
+	}
+}
+
+/*
+ * Description :
+ * 1- This function displays the content of the updated data base account profile.
+ * 2- It takes pointer to constant data, because it's n't meant for it to change any data.
+ */
+static void displayUpdatedAccountData(const ST_accountsDB_t * accountReference)
+{
+	puts("\n#########################");
+	puts("/*Transaction Receipt*/");
+	printf("Account Balance: %f\n",accountReference->balance);
+	printf("Account State: %s\n",accountReference->state==RUNNING?"Running":"Blocked");
+	printf("PAN: %s\n",accountReference->primaryAccountNumber);
+	puts("#########################");
+}
+
+/*******************************************************************************
+ *                      Functions Definitions                                  *
+ *******************************************************************************/
+/*
+ * Description :
+ * 1- This function will take all transaction data and validate its data,
+ *    it contains all server logic.
+ * 2- It checks the account details and amount availability.
+ * 3- If the account does not exist return FRAUD_CARD, if the amount is not
+ *    available will return DECLINED_INSUFFECIENT_FUND, if the account is blocked will
+ *    return DECLINED_STOLEN_CARD, if a transaction can't be saved will return
+ *    INTERNAL_SERVER_ERROR , else returns APPROVED.
+ * 4- It will update the database with the new balance.
+ */
+EN_transState_t recieveTransactionData(ST_transaction_t *transData)
+{
+	/*A structure object from type ST_accountDB_t to store the required account, if found in the DB*/
+	ST_accountsDB_t accountReference;
+
+	/*
+	 * Server logic
+	 */
+
+	/*Check if the account is valid, .i.e, existent in the data base*/
+	if(isValidAccount(&(transData->cardHolderData), &accountReference)!=SERVER_OK)
+	{
+		/*If the account isn't valid, update the transaction state and output the state to the terminal*/
+		transData->transState=FRAUD_CARD;
+
+		/*Output Declined Fraud Card to the terminal*/
+		puts("Declined Fraud Card");
+
+		/*Return the transaction state*/
+		return FRAUD_CARD;
+	}
+	/*Check if the found account, .i.e, the account copied from the DB to the object accountReference, is blocked or not*/
+	else if(isBlockedAccount(&accountReference)!=SERVER_OK)
+	{
+		/*If the account is blocked, update the transaction state and output the state to the terminal*/
+		transData->transState=DECLINED_STOLEN_CARD;
+
+		/*Output Declined Stolen Card to the terminal*/
+		puts("Declined Stolen Card");
+
+		/*Return the transaction state*/
+		return DECLINED_STOLEN_CARD;
+	}
+	/*
+	 * Check if the required amount from the found account, .i.e, the account copied from the DB to the object accountReference,
+	 * is available or not.
+	 */
+	else if(isAmountAvailable(&(transData->terminalData), &accountReference)!= SERVER_OK)
+	{
+		/*if the amount isn't available, update the transaction state and output the state to the terminal*/
+		transData->transState=DECLINED_INSUFFECIENT_FUND;
+
+		/*Output Declined Insufficient Funds to the terminal*/
+		puts("Declined Insufficient Funds");
+
+		/*Return the transaction state*/
+		return DECLINED_INSUFFECIENT_FUND;
+	}
+	else if(saveTransaction(transData)!=SERVER_OK)
+	{
+		/*If the transaction isn't saved successfully, update the transaction state, and output error to the terminal.*/
+		transData->transState=INTERNAL_SERVER_ERROR;
+
+		/*Output Internal Server Error to the terminal*/
+		puts("Internal Server Error");
+
+		/*Return the transaction state*/
+		return INTERNAL_SERVER_ERROR;
+	}
+	else
+	{
+		/*Reaching here means that the transaction is a success, hence, update the transaction state as APPROVED!*/
+		transData->transState=APPROVED;
+
+		/*Update the account balance in the data base*/
+		updateAccountsDB(&accountReference, transData->terminalData.transAmount);
+
+		/*Return the transaction state*/
+		return APPROVED;
+	}
+}
+
+/*
+ * Description :
+ * 1- This function will take card data and validate if the account related to this
+ *    card exists or not.
+ * 2- It checks if the PAN exists or not in the server's database (searches for the
+ *    card PAN in the DB).
+ * 3- If the PAN doesn't exist will return ACCOUNT_NOT_FOUND and the account reference
+ *    will be NULL, else will return SERVER_OK and return a reference to this account
+ *    in the DB.
+ */
+EN_serverError_t isValidAccount(ST_cardData_t *cardData, ST_accountsDB_t *accountRefrence)
+{
+	/*local variable to index accounts DB*/
+	uint8_t accountsDBIndex=0;
+
+	/*Search for the required account in the accounts DB*/
+	for(accountsDBIndex=0; accountsDBIndex<255;accountsDBIndex++)
+	{
+		/*Check if the account is found through comparing PAN numbers of the required and stored accounts*/
+		if(strcmp((const char*)cardData->primaryAccountNumber,(const char*)accountsDB[accountsDBIndex].primaryAccountNumber)==0)
+		{
+			/*If the required account has been found, store a copy of its data in accountRefrence*/
+			*accountRefrence=accountsDB[accountsDBIndex];
+
+			/*Return indicating success*/
+			return SERVER_OK;
+		}
+	}
+
+	/*Reaching here means that the account hasn't been found in the DB*/
+	return ACCOUNT_NOT_FOUND;
+}
+
+/*
+ * Description :
+ * 1- This function takes a reference to the account into the database and verifies if it is
+ *    blocked or not.
+ * 2- If the account is running it will return SERVER_OK, else if the account is blocked it
+ *    will return BLOCKED_ACCOUNT.
+ */
+EN_serverError_t isBlockedAccount(ST_accountsDB_t *accountRefrence)
+{
+	/*local variable to index accounts DB*/
+	uint8_t accountsDBIndex=0;
+
+	/*Search for the required account in the accounts DB*/
+	for(accountsDBIndex=0; accountsDBIndex<255;accountsDBIndex++)
+	{
+		/*Check if the account is found through comparing PAN numbers of the required and stored accounts*/
+		if(strcmp((const char*)accountRefrence->primaryAccountNumber,(const char*)accountsDB[accountsDBIndex].primaryAccountNumber)==0)
+		{
+			/*If the account is found, check whether it's blocked or running*/
+			if(accountsDB[accountsDBIndex].state==BLOCKED)
+			{
+				/*If it's Blocked, update its state in the account reference and return Blocked*/
+				accountRefrence->state=BLOCKED;
+				return BLOCKED_ACCOUNT;
+			}
+		}
+	}
+
+	/*Reaching here means that the account is Running*/
+	return SERVER_OK;
+}
+
+/*
+ * Description :
+ * 1- This function will take terminal data and a reference to the account in the database
+ *    and check if the account has a sufficient amount to withdraw or not.
+ * 2- It checks if the transaction's amount is available or not.
+ * 3- If the transaction amount is greater than the balance in the database will return
+ *    LOW_BALANCE, else will return SERVER_OK.
+ */
+EN_serverError_t isAmountAvailable(ST_terminalData_t *termData, ST_accountsDB_t *accountRefrence)
+{
+	/*Compare the amount required to be withdrawn with the available balance in the account reference*/
+	if((uint32_t)termData->transAmount>(uint32_t)accountRefrence->balance)
+	{
+		/*If amount isn't available, return Low_balance*/
+		return LOW_BALANCE;
+	}
+	else
+	{
+		/*If the amount is available, return Server ok*/
+		return SERVER_OK;
+	}
+}
+
+/*
+ * Description :
+ * 1- This function will store all transaction data in the transactions database.
+ * 2- It gives a sequence number to a transaction, this number is incremented once a transaction
+ *    is processed into the server, you must check the last sequence number in the server to give
+ *    the new transaction a new sequence number.
+ * 3- It saves any type of transaction, APPROVED, DECLINED_INSUFFECIENT_FUND, DECLINED_STOLEN_CARD,
+ *    FRAUD_CARD, INTERNAL_SERVER_ERROR.
+ * 4- It will list all saved transactions using the listSavedTransactions function.
+ * 5- Assuming that the connection between the terminal and server is always connected, then it will
+ *    return SERVER_OK.
+ */
+EN_serverError_t saveTransaction(ST_transaction_t *transData)
+{
+	/*
+	 * A static variable that acts like the stack pointer, pointing at the first empty space in the transactions DB,
+	 * it's static to keep its value when making the next store operation into the transactions DB.
+	 */
+	static uint8_t transactionsDBSaveIndex=0;
+
+	/*A local variable to index transactions DB for search purposes*/
+	uint8_t transactionsDBSearchIndex=0;
+
+	/*Search for the required transaction in the transactions DB*/
+	for(transactionsDBSearchIndex=0; transactionsDBSearchIndex<255;transactionsDBSearchIndex++)
+	{
+		/*Check if the transaction is found through comparing PAN numbers of the required and stored transactions*/
+		if(strcmp((const char*)transData->cardHolderData.primaryAccountNumber,(const char*) transactionsDB[transactionsDBSearchIndex].cardHolderData.primaryAccountNumber)==0)
+		{
+			/*
+			 * If the transactions is found, update the transactions state as approved, to be printed successfully in the
+			 * listSavedTransactions() function.
+			 */
+			transData->transState=APPROVED;
+
+			/*Update transaction data in the found transaction in the DB*/
+			transactionsDB[transactionsDBSearchIndex]=*transData;
+
+			/*Increment the sequence number, which represents the total number of transactions made by the account with the PAN found*/
+			transactionsDB[transactionsDBSearchIndex].transactionSequenceNumber++;
+
+			/*List all saved transactions in the DB*/
+			listSavedTransactions();
+
+			/*Return Successfully*/
+			return SERVER_OK;
+		}
+	}
+
+	/*
+	 * If the transaction was not found in data base, create a reference for it in the transactions DB;
+	 * because the PAN was initially checked and validated, thus, we need to create a new profile for this account in the transaction DB.
+	 */
+
+	/*Check whether the DB isn't Full*/
+	if(transactionsDBSaveIndex<255)
+	{
+		/*
+		 * If the DB isn't full, update the transactions state as approved, to be printed successfully in the
+		 * listSavedTransactions() function.
+		 */
+		transData->transState=APPROVED;
+
+		/*Create a new transactions profile for this account in the DB*/
+		transactionsDB[transactionsDBSaveIndex]=*transData;
+
+		/*Set the Transaction Sequence Number to 1, because it's the first transaction made by this account*/
+		transactionsDB[transactionsDBSaveIndex].transactionSequenceNumber=1;
+
+		/*Increment the transactions DB stack pointer, for next usage*/
+		transactionsDBSaveIndex++;
+
+		/*List all saved transactions in the DB*/
+		listSavedTransactions();
+
+		/*Return Successfully*/
+		return SERVER_OK;
+	}
+	else
+	{
+		/*Reaching here means that the transaction profile was neither found in transactions DB, nor created because the DB is Full*/
+		puts("Saving Failed, Data Base is Full And No Previous Transaction Profile Was Found in the Data Base.");
+		return SAVING_FAILED;
+	}
+}
+
+/*
+ * Description :
+ * 1- This function prints all transactions found in the transactions DB.
+ * 2- Please follow the following format for only one transaction data:
+ * 		#########################
+ * 		Transaction Sequence Number:
+ * 		Transaction Date:
+ * 		Transaction Amount:
+ * 		Transaction State:
+ * 		Terminal Max Amount:
+ * 		Cardholder Name:
+ * 		PAN:
+ * 		Card Expiration Date:
+ * 		#########################
+ */
+void listSavedTransactions(void)
+{
+	/*A local variable to index transactions DB for search purposes*/
+	uint8_t transactionsDBIndex=0;
+
+	/*Display all Transactions profiles found in the DB*/
+	for(transactionsDBIndex=0; transactionsDBIndex<255; transactionsDBIndex++)
+	{
+		/*Check whether we reached an empty profile or not*/
+		if(transactionsDB[transactionsDBIndex].cardHolderData.cardHolderName[0]!= 0)
+		{
+			puts("#########################");
+			printf("Transaction Sequence Number: %d\n",transactionsDB[transactionsDBIndex].transactionSequenceNumber);
+			printf("Transaction Date: %s\n",transactionsDB[transactionsDBIndex].terminalData.transactionDate);
+			printf("Transaction Amount: %f\n",transactionsDB[transactionsDBIndex].terminalData.transAmount);
+			PRINT_TRANS_STATE(transactionsDB[transactionsDBIndex].transState);
+			printf("Terminal Max Amount: %f\n",transactionsDB[transactionsDBIndex].terminalData.maxTransAmount);
+			printf("Card Holder Name: %s\n",transactionsDB[transactionsDBIndex].cardHolderData.cardHolderName);
+			printf("PAN: %s\n",transactionsDB[transactionsDBIndex].cardHolderData.primaryAccountNumber);
+			printf("Card Expiration Date: %s\n",transactionsDB[transactionsDBIndex].cardHolderData.cardExpirationDate);
+			puts("#########################");
+		}
+		else
+		{
+			/*If an empty profile is reached, stop displaying*/
+			break;
+		}
+	}
+}
+
+

@@ -1,0 +1,95 @@
+/******************************************************************************
+ *
+ * Module: Application Module
+ *
+ * File Name: app.c
+ *
+ * Description: Source file for application module.
+ *
+ * Author: Moaz Mohamed
+ *
+ *******************************************************************************/
+
+/*******************************************************************************
+ *                                Includes                                     *
+ *******************************************************************************/
+#include "app.h"
+#include "../Card/card.h"
+#include "../Terminal/terminal.h"
+#include "../Server/server.h"
+#include <stdio.h>
+
+/*******************************************************************************
+ *                      Functions Definitions                                  *
+ *******************************************************************************/
+/*
+ * Description :
+ * 1- This function is responsible for simulating possible scenarios the user might
+ *    come by.
+ */
+void appStart(void)
+{
+	ST_cardData_t cardData;
+	ST_terminalData_t termData;
+	ST_transaction_t transData;
+
+	EN_cardError_t cardCheck=-1;
+	EN_terminalError_t terminalCheck=-1;
+
+/**********************************Card Logic**********************************/
+	do{
+		cardCheck=getCardHolderName(&cardData);
+	}while(cardCheck!=CARD_OK);
+
+	do{
+		cardCheck=getCardExpiryDate(&cardData);
+	}while(cardCheck!=CARD_OK);
+
+
+	do{
+		cardCheck=getCardPAN(&cardData);
+	}while(cardCheck!=CARD_OK);
+
+
+/**********************************Terminal Logic**********************************/
+	if(isValidCardPAN(&cardData)==INVALID_CARD)
+	{
+		puts("Card PAN is not Luhn\nDeclined Fraud Card");
+		return ;
+	}
+
+	puts("Valid PAN");
+
+
+	do{
+		terminalCheck=getTransactionDate(&termData);
+	}while(terminalCheck!=TERMINAL_OK);
+	terminalCheck=-1;
+
+	if(isCardExpired(&cardData, &termData)==EXPIRED_CARD)
+	{
+		puts("Declined Expired Card");
+		return;
+	}
+
+	do{
+		terminalCheck=setMaxAmount(&termData, 50000.0);
+	}while(terminalCheck!=TERMINAL_OK);
+
+	printf("Maximum Terminal Amount: %f\n",termData.maxTransAmount);
+
+	do{
+		terminalCheck=getTransactionAmount(&termData);
+	}while(terminalCheck!=TERMINAL_OK);
+
+	if(isBelowMaxAmount(&termData)==EXCEED_MAX_AMOUNT)
+	{
+		puts("Declined Amount Exceeding Limit");
+		return;
+	}
+
+/**********************************Server Logic**********************************/
+	transData.cardHolderData=cardData;
+	transData.terminalData=termData;
+	transData.transState=recieveTransactionData(&transData);
+}
